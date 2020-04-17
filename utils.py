@@ -2,9 +2,9 @@ import pandas as pd
 import os
 
 
-data_path = "../data"
-train_path = os.path.join(data_path, "origin_data", "Round2_train.csv")
-test_path = os.path.join(data_path, "origin_data", "round2_test.csv")
+data_path = "./data"
+train_path = os.path.join(data_path, "origin_data", "Train_Data.csv")
+test_path = os.path.join(data_path, "origin_data", "Test_Data.csv")
 device_id = 0
 
 
@@ -20,7 +20,7 @@ def concat(title, content):
     else:
         return str(title) + " " + str(content)
 
-
+# 获得各entity出现的次数
 def entity_in_text_counter(data):
     entity_set = []
     entity_counter = {}
@@ -31,7 +31,7 @@ def entity_in_text_counter(data):
         entity_counter[entity] = entity_set.count(entity)
     return entity_counter
 
-
+# 获得不在text中的entity出现但次数
 def entity_not_in_text_counter(data):
     entity_set = []
     entity_counter = {}

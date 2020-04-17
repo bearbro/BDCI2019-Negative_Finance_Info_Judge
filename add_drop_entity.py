@@ -1,7 +1,12 @@
 import os
 import pandas as pd
 from utils import concat, data_path, train_path, load_data
-
+'''
+对模型结果进行加工
+处理未在文本中出现的实体，利用训练集的先验知识构建实体白名单和黑名单，修正模型预测结果：
+白名单：训练集中不在文本内出现的实体但最终出现在key_entity中。
+黑名单：训练集中不在文本内出现的实体但最终不出现在key_entity中。
+'''
 
 def get_entity_data(data):
     data = data[data["negative"] == 1]
@@ -111,7 +116,9 @@ if __name__ == "__main__":
     for key, value in positive_counter.items():
         positive_counter[key] = positive_counter[key] / entity_counter[key]
 
+    # 黑名单：训练集（存在负面实体的部分）中不在文本内出现的实体但最终一直不出现在key_entity中
     negative_entity_list = [entity for entity, _ in negative_counter.items() if _ == 1.0]
+    # 白名单：训练集（存在负面实体的部分）中不在文本内出现的实体但最终一直出现在key_entity中
     positive_entity_list = [entity for entity, _ in positive_counter.items() if _ == 1.0]
 
     test_data["label"] = test_data.apply(lambda x: add_entity(x, negative_entity_list), axis=1)

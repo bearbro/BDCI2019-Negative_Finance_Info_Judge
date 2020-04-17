@@ -10,11 +10,13 @@ import copy
 import numpy as np
 import torch
 
+'''
+对原始文件进行预处理，生成五折数据（为了避免在随机划分时的顺序不同，使用了线下训练时的五折数据的顺序）
+'''
+raw_data_path = './data/preprocess'
 
-raw_data_path = './'
 
-
-# 合并相似的title 和 text
+# 合并(不相似的)title 和 text
 def concat(title, content):
     if type(title) is float or str(title) in str(content):
         return str(content)
@@ -60,13 +62,14 @@ def cos_similar(vector1, vector2):
     else:
         return round(dot_product / ((normA ** 0.5) * (normB ** 0.5)), 2)
 
-
-train_data = pd.read_csv(os.path.join(raw_data_path,'Round2_train.csv'), encoding='utf-8')
-test_data = pd.read_csv(os.path.join(raw_data_path,'round2_test.csv'), encoding='utf-8')
+# 合并title和text
+from utils import  data_path
+train_data = pd.read_csv(os.path.join(data_path,"origin_data",'Train_Data.csv'), encoding='utf-8')
+test_data = pd.read_csv(os.path.join(data_path,"origin_data",'Test_Data.csv'), encoding='utf-8')
 
 train_data["similar"] = train_data.apply(lambda x: get_jaccard_similar(x["title"], x["text"]), axis=1)
 test_data["similar"] = test_data.apply(lambda x: get_jaccard_similar(x["title"], x["text"]), axis=1)
-
+# title 和 text 相似度高 则删除title
 train_data["title"] = train_data.apply(lambda x: process_title(x["title"], x["text"], x["similar"]), axis=1)
 # train_data["text"] = train_data.apply(lambda x: process_text(x["title"], x["text"], x["similar"]), axis=1)
 
@@ -75,15 +78,15 @@ test_data["title"] = test_data.apply(lambda x: process_title(x["title"], x["text
 
 del train_data["similar"]
 del test_data["similar"]
-
+# 合并
 train_data["text"] = train_data.apply(lambda x: concat(x['title'], x['text']), axis=1)
 test_data["text"] = test_data.apply(lambda x: concat(x['title'], x['text']), axis=1)
 
 train_data["title"] = ""
 test_data["title"] = ""
 
-train_data.to_csv(os.path.join(raw_data_path,'Train_Data_round2.csv'), encoding='utf-8', index=False)
-test_data.to_csv(os.path.join(raw_data_path,'Test_Data_round2.csv'), encoding='utf-8', index=False)
+train_data.to_csv(os.path.join(raw_data_path,'Train_Data.csv'), encoding='utf-8', index=False)
+test_data.to_csv(os.path.join(raw_data_path,'Test_Data.csv'), encoding='utf-8', index=False)
 
 
 
@@ -91,8 +94,8 @@ test_data.to_csv(os.path.join(raw_data_path,'Test_Data_round2.csv'), encoding='u
 
 
 # 更改路径
-train_data = pd.read_csv(os.path.join(raw_data_path,'Train_Data_round2.csv')) 
-test_data = pd.read_csv(os.path.join(raw_data_path,'Test_Data_round2.csv'))
+train_data = pd.read_csv(os.path.join(raw_data_path,'Train_Data.csv'))
+test_data = pd.read_csv(os.path.join(raw_data_path,'Test_Data.csv'))
 test_entity_null_id = test_data[test_data['entity'].isnull()]['id']
 test_data['entity'] = test_data['entity'].fillna(' ')
 test_data['title'] = test_data['title'].fillna('')
@@ -103,7 +106,7 @@ train_data['entity'] = train_data['entity'].fillna(' ')
 train_data['title'] = train_data['title'].fillna('')
 train_data['text'] = train_data.apply(lambda x: x['title']+' '+x['text'] if x['title'] != x['text'] else x['text'],axis=1)
 train_data['text']  = train_data.apply(lambda x:x['text'].strip(),axis=1)
-
+#处理超话#
 def process_chaohua_and_jing(text: str, entity_list: List[str]) -> str:
     new_entity_list = []
     for i  in entity_list:
@@ -162,7 +165,7 @@ def process_at(text: str, entity_list: List[str]) -> str:
     final_text = re.sub('@|//', "", "".join(final_text))
     return final_text
 
-
+#处理来源  来源 包括entity_list中任一实体则保留；否则删除
 def process_laiyuan(text: str, entity_list: List[str]) -> str:
     pattern = "(文章|本文)?来源[：\:]\s?[^(，|。|\?|\||：|/||\s)]*[，。\?：/\|\s]"
     final_text = []
@@ -189,7 +192,7 @@ def process_laiyuan(text: str, entity_list: List[str]) -> str:
     return "".join(final_text)
 
 
-
+# 预处理文件
 def eliminate_special_str(text: str, entity_list: List[str]) -> str:
     # 去除特殊字符
     regex1 = "①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩"
@@ -225,7 +228,7 @@ def eliminate_special_str(text: str, entity_list: List[str]) -> str:
     text = re.sub(regex5, " ", text)
     # 去除 [doge] [cp] 等
     regex5 = "\[[a-zA-Z0-9]*\]"
-    text5 = re.sub(regex5, " ", text)
+    text = re.sub(regex5, " ", text)
     # 去除 点击上方蓝字
     regex6 = "【字号[^】]*】|点击上方蓝字|点击上方|【图】|回复使用道具举报|查看更多 |当前位置[：\:]|全文："
     text = re.sub(regex6, " ", text)
@@ -247,21 +250,14 @@ def eliminate_special_str(text: str, entity_list: List[str]) -> str:
     text = re.sub(regex7, " ", text)
     regex7 = "\.(png|jpg)\s?\([^\)]*\)"
     text = re.sub(regex7, " ", text)
-
     text = process_laiyuan(text, entity_list)
-
     regex7 = "[\(（【\[][^(\(|（|【|\[)]*(编辑)：[^(\)|）)]*[\)）】\]]"
     text = re.sub(regex7, " ", text)
 
     regex7 = "(责任)?编辑[：\:]\s?[^(，|。|\?|\||：|/|\s)]*[，。\?：/\|\s]"
     text = re.sub(regex7, " ", text)
-
-
     # 去掉单独的数字,以及带括号的数字(124) （12435）
     regex_number = "[0-9]+ |[\(（\{][0-9a-zA-Z]+[\)）\}]"
-
-
-
     text = re.sub(regex_number, " ", text)
     # 去掉超长字符串
     regex_super_long = "[a-zA-Z0-9]{50,}"
@@ -278,7 +274,7 @@ def eliminate_special_str(text: str, entity_list: List[str]) -> str:
     regex11 = "\(?\d*/\d*/\d*\)?|\(?\d*-\d*-\d*\)?|\(?\d*\.\d*\.\d*\)?|\(?\d*年\d*月\d*日\)?|\(?\d*:\d*:\d*\)?"
     text = re.sub(regex11, " ", text)
     #去除 空格
-    regex10 = " |" + "　" + "| " + "|	" + "|\s+|\s+" 
+    regex10 = " |" + "　" + "| " + "|	" + "|\s+|\s+"
     text = re.sub(regex10, " ", text)
     return text
 
@@ -287,19 +283,22 @@ def eliminate_special_str(text: str, entity_list: List[str]) -> str:
 # 修改路径
 for index, item in train_data.iterrows():
     text = item['text']
-    entity_list = item['entity'].split(';')
+    entity_list = [i for i in item['entity'].split(';') if len(i) > 0] # 去除''
+    train_data.iloc[index, 3] = ';'.join(entity_list)
     processed_text = eliminate_special_str(text,entity_list)
     train_data.iloc[index,2] = processed_text
 train_data.to_csv(os.path.join(raw_data_path,'Train_Data_Title_processed_final.csv'),index=False)
 for index, item in test_data.iterrows():
     text = item['text']
-    entity_list = item['entity'].split(';')
+    entity_list = [i for i in item['entity'].split(';') if len(i) > 0] # 去除''
+    test_data.iloc[index, 3] = ';'.join(entity_list)
+    processed_text = eliminate_special_str(text, entity_list)
     test_data.iloc[index,2] = processed_text
 test_data.to_csv(os.path.join(raw_data_path,'Test_Data_Title_processed_final.csv'),index=False)
 
 
 # 准备生成二分类的五折数据
-train_data = pd.read_csv(os.path.join(raw_data_path,'Train_Data_Title_processed_final.csv')) 
+train_data = pd.read_csv(os.path.join(raw_data_path,'Train_Data_Title_processed_final.csv'))
 test_data = pd.read_csv(os.path.join(raw_data_path,'Test_Data_Title_processed_final.csv'))
 test_entity_null_id = test_data[test_data['entity'].isnull()]['id']
 test_data['entity'] = test_data['entity'].fillna(' ')
@@ -320,6 +319,8 @@ test_data.shape
 test_data_no_entity.shape
 def select_test(context,title,entity_list,key_entity_list):
     return entity_list
+
+# 去除不在key_entity_list中且被蕴含的entity_list元素
 def select_by_key_entity(context,title,entity_list,key_entity_list):
     new_list = [i for i in entity_list]
     new_list = sorted(new_list,key= lambda x:len(x),reverse=True)
@@ -330,7 +331,7 @@ def select_by_key_entity(context,title,entity_list,key_entity_list):
             if i in j and i and i not in key_entity_list :
                 flag = False
                 break
-        if flag:               
+        if flag:
             final_list.append(i)
     return final_list
 
@@ -338,7 +339,7 @@ def select_by_key_entity(context,title,entity_list,key_entity_list):
 train_entity = pd.DataFrame(columns=['id','text','entity','negative'])
 test_entity = pd.DataFrame(columns=['id','text','entity'])
 
-
+# 构造数据 id text entity negative
 for index,item in train_data.iterrows():
     if item['negative'] == 0:
         entity_list = item['entity'].split(';')
@@ -377,9 +378,9 @@ for i in pd_list:
 for i in range(5):
     temp_dev_pd = pd_list[i]
     train_cv = copy.deepcopy(train_entity)
-    train_cv = train_cv.append(temp_dev_pd,ignore_index=True).drop_duplicates(keep=False)
+    train_cv = train_cv.append(temp_dev_pd,ignore_index=True).drop_duplicates(keep=False)#加上验证集然后去除重复的，达到去除验证集的效果
     print('--',temp_dev_pd.shape,'--',train_cv.shape)
-    path = os.path.join(os.path.join(raw_data_path,'fusai_cv_data','cv_'+str(i)))
+    path = os.path.join(os.path.join(raw_data_path,'bear_cv_data','cv_'+str(i)))
     if not os.path.exists(path):
         os.makedirs(path)
     dev = pd.DataFrame({'index':temp_dev_pd['id'],'question':temp_dev_pd['entity'],
@@ -388,13 +389,15 @@ for i in range(5):
     train = pd.DataFrame({'index':train_cv['id'],'question':train_cv['entity'],
                           'sentence':train_cv['text'],'label':train_cv['negative']})
     test = pd.DataFrame({'index':test_entity['id'],'question':test_entity['entity'],'sentence':test_entity['text']})
-    dev.to_csv(os.path.join(path,'dev.tsv'),sep='\t',index=False)
+    dev.to_csv(os.path.join(path,'dev.tsv'),sep='\t',index=False) #1/5 train
     dev_id.to_csv(os.path.join(path,'dev_id.tsv'),sep='\t',index=False)
-    train.to_csv(os.path.join(path,'train.tsv'),sep='\t',index=False)
+    train.to_csv(os.path.join(path,'train.tsv'),sep='\t',index=False) #4/5 train
     test.to_csv(os.path.join(path,'test.tsv'),sep='\t',index=False)
 
-# change length from cv file 
-def find_all(sub,s):
+
+
+# change length from cv file
+def find_all(sub,s):# 获得s中sub的位置list
     index_list = []
     index = s.find(sub)
     while index != -1:
@@ -406,17 +409,21 @@ def find_all(sub,s):
     else:
         return -1
 
-def get_span(loc,text,length):
+def get_span(loc,text,length): # 获取text[loc]左右各截取length
     left = loc-length
+    left = 0 if left < 0 else left
     if loc+length < len(text):
         right= loc+length
     else:
         right = len(text)
     return text[left:right]
+
+# 处理长于512字的text,text中无entity则取前512，有则选取前100+前5个entity前后截取一段
+# 同一text对应不同entity的处理结果可能不同
 for i in range(5):
-    path= os.path.join(raw_data_path,'fusai_cv_data','cv_'+str(i))
+    path= os.path.join(raw_data_path,'bear_cv_data','cv_'+str(i))
     data=['train','dev','test']
-    save_path = os.path.join(raw_data_path,'fusai_cv_data_max512')
+    save_path = os.path.join(raw_data_path,'bear_cv_data_max512')
     if not os.path.exists(save_path):
         os.mkdir(save_path)
     save_path_cv =os.path.join(save_path,'cv_'+str(i))
@@ -434,6 +441,7 @@ for i in range(5):
             text = item['sentence']
             if len(text) > 512:
                 if pd.isna(entity):
+                    train.iloc[index, 2] = text[0:512]
                     continue
                 loc = text.find(entity)
                 if loc == -1:
@@ -446,26 +454,28 @@ for i in range(5):
                     else:
                         head = text[0:100]
                         start_list = find_all(entity,text)[0:5]
-                        if len(start_list)==0:
-                            continue
-                        span_length = (512-100)//len(start_list)
-                        content = [get_span(i,text,span_length)for i in start_list]
+                        # if len(start_list)==0:
+                        #     continue
+                        span_length = (512-100)//len(start_list) -1
+                        content = [get_span(i,text,span_length//2 )for i in start_list]
                         text_target = head+' '.join(content)
                         train.iloc[index,2]=text_target
 #                         print(item['index'],'\t',entity,'\t',len(start_list))
                         num +=1
         train.to_csv(os.path.join(save_path,'cv_'+str(i),j+'.tsv'),sep='\t',index=False)
+        print(max([len(i) for i in train['sentence']]))
         #train.to_csv(save_path+'cv_'+str(i)+'/'+j+'.tsv',sep='\t',index=False)
         print(num)
 
 
-# change length from cv file 
+# change length from cv file
 ## add <>
+# 给entity添加[],同时在entity_all查找其全称，有则将其替换为全称
 nan_num =0
 for i in range(5):
-    path= os.path.join(raw_data_path,'fusai_cv_data_max512','cv_'+str(i))
+    path= os.path.join(raw_data_path,'bear_cv_data_max512','cv_'+str(i))
     data=['test','train','dev']
-    save_path = os.path.join(raw_data_path,'fusai_cv_data_max512_span_fc')
+    save_path = os.path.join(raw_data_path,'bear_cv_data_max512_span_fc')
     if not os.path.exists(save_path):
         os.mkdir(save_path)
     save_path_cv =os.path.join(save_path,'cv_'+str(i))
@@ -489,24 +499,25 @@ for i in range(5):
             try:
                 for x in entity_all:
                     if type(x) is not float:
-                        if  entity in x and len(x) != len(entity):
+                        if  entity in x and len(x) != len(entity): # x是entity的全称
                             long = x
                             break
             except :
                 long = None
-                print('nan  entity: ',entity)
+                print('nan  entity: ',entity,item)
+                nan_num+=1
                 continue
             if long is None:
-                
+
                 if type(entity) is not float and len(entity)>1 and '?'not in entity and '(' not in entity  and '（' not in entity and '*'not in entity:
-                    print(entity)
-                    text = re.sub(entity,'['+entity+']',text)
+                    # print(entity)
+                    text = re.sub(entity,'['+entity+']',text) # 给text中entity添加[]
                     train.iloc[index,2]=text
                     num +=1
             else:
                 if type(entity) is not float and len(entity)>1 and '?'not in entity and '(' not in entity  and '（' not in entity and '*'not in entity:
                     if type(long) is not float and len(long)>1 and '?'not in long and '(' not in long  and '（' not in long and '*'not in long:
-                        print(entity)
+                        print(entity,long)
                         text = re.sub(long,'@@@@@@@',text)
                         text = re.sub(entity,'['+entity+']',text)
                         text = re.sub('@@@@@@@',long,text)
@@ -514,4 +525,4 @@ for i in range(5):
                         num +=1
         train.to_csv(os.path.join(save_path,'cv_'+str(i),j+'.tsv'),sep='\t',index=False)
         #train.to_csv(save_path+'cv_'+str(i)+'/'+j+'.tsv',sep='\t',index=False)
-        print(num)
+        print(num, nan_num)

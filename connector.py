@@ -2,7 +2,9 @@ import pandas as pd
 import os
 import re
 from utils import data_path
-
+'''
+修正文本中以顿号、逗号、空格作为分割的连续出现的实体，其预测结果应该一致。
+'''
 
 # def get_comma_entiy(text, entity_list, comma_threshold=5, none_count=0):
 #     if len(entity_list) < 5:

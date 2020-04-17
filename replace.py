@@ -4,6 +4,12 @@ from utils import data_path
 
 
 def drop_duplicate_key_entity(test_list, train_list):
+    '''
+    判断两个list的元素是否相同
+    :param test_list:
+    :param train_list:
+    :return:
+    '''
     if type(test_list) is float and type(train_list) is float:
         return 1
     if type(test_list) is not float and type(train_list) is not float:
@@ -18,6 +24,12 @@ def drop_duplicate_key_entity(test_list, train_list):
 
 
 def get_id_map(data, cos_similar):
+    '''
+    筛选data中entity，key_entity完全相同，text相似的大于cos_similar的部分
+    :param data:
+    :param cos_similar:
+    :return:
+    '''
     data = data[data["cos_similar"] > cos_similar]
     data["same"] = data.apply(lambda x: 1 if x["entity"] == x["similar_entity"] else 0, axis=1)
     data = data[data["same"] == 1].reset_index(drop=True)
@@ -52,7 +64,7 @@ def replace_key_entity(id_map, id, key_entity, train_data):
 
 def change_replace(file, cos_file):
     submit = pd.read_csv(os.path.join(data_path, "submit", file))
-    test_data = pd.read_csv(os.path.join(data_path, "preprocess", "Test_Data_round2.csv"), encoding='utf-8')
+    test_data = pd.read_csv(os.path.join(data_path, "preprocess", "Test_Data.csv"), encoding='utf-8')
     test_data = pd.merge(test_data[["id", "entity"]], submit, on="id", how="left")
     data = pd.read_csv(os.path.join(data_path, cos_file), encoding='utf-8')
     del data["negative"]
@@ -68,7 +80,7 @@ def change_replace(file, cos_file):
 
 def replace_train(cos_file, cos_similar, file=""):
     submit = pd.read_csv(os.path.join(data_path, "submit", file))
-    train_data = pd.read_csv(os.path.join(data_path, "preprocess", "Train_Data_round2.csv"), encoding='utf-8')
+    train_data = pd.read_csv(os.path.join(data_path, "preprocess", "Train_Data.csv"), encoding='utf-8')
     id_map = get_id_map(cos_file, cos_similar)
     print(len(id_map))
     print(submit[submit["id"].isin(id_map)])
@@ -80,7 +92,7 @@ def replace_train(cos_file, cos_similar, file=""):
 
 
 if __name__ == "__main__":
-
+    # 拼接，给test补上最相似的train
     cos_file = change_replace("fuxian_add_drop_dundoukong_substring_1.csv", "test_cos_text_v2.csv")
     submit = replace_train(cos_file, 0.68, "fuxian_add_drop_dundoukong_substring_1.csv")
     submit.to_csv(os.path.join(data_path, "submit", "fuxian_replace.csv"), encoding='utf-8', index=False)

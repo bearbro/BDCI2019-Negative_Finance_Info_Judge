@@ -3,7 +3,7 @@ import pandas as pd
 from utils import data_path
 
 
-def get_keep_pair_dict():
+def get_keep_pair_dict(train_data):
     long_short_count_dict = {}
 
     for index, cur_row in train_data.iterrows():
@@ -42,7 +42,7 @@ def get_keep_pair_dict():
                             long_short_count_dict[entity_tupple]['only_longer'] += 1
                         else:
                             long_short_count_dict[entity_tupple]['no_one'] += 1
-
+    print(long_short_count_dict['钱内助'])
     keep_pair_dict = {}
 
     count = 0
@@ -103,15 +103,15 @@ def post_test_data(keep_pair_dict):
 
 
 if __name__ == "__main__":
-    train_path = os.path.join(data_path, "preprocess", "Train_Data_round2.csv")
-    test_path = os.path.join(data_path, "preprocess", "Test_Data_round2.csv")
+    train_path = os.path.join(data_path, "preprocess", "Train_Data.csv")
+    test_path = os.path.join(data_path, "preprocess", "Test_Data.csv")
     train_data = pd.read_csv(train_path)
     test_data = pd.read_csv(test_path)
     model_predict_result = pd.read_csv(os.path.join(data_path, "submit", "fuxian_add_drop_dundoukong.csv"))
     merge_data = test_data.merge(model_predict_result, left_on='id', right_on='id')
 
-    keep_pair_dict = get_keep_pair_dict()
-    post_test_data(keep_pair_dict=keep_pair_dict)
+    keep_pair_dict = get_keep_pair_dict(train_data)  # 获取训练集中存在的长短实体（全称和缩略词）
+    post_test_data(keep_pair_dict=keep_pair_dict)  # 根据训练集的先验知识补全test中的key_entity
     merge_data.to_csv(os.path.join(data_path, "submit", "fuxian_add_drop_dundoukong_substring_1.csv"),
                       columns=['id', 'negative', 'key_entity'], index=False, )
 

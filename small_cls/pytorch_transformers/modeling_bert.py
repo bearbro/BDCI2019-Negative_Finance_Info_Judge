@@ -1060,17 +1060,17 @@ class BertForSequenceClassification(BertPreTrainedModel):
                 position_ids=None, head_mask=None, labels=None):
 
         outputs = self.bert(input_ids,
-                            attention_mask=attention_mask,
-                            token_type_ids=token_type_ids,
+                            attention_mask=attention_mask,  #指示哪些被mask
+                            token_type_ids=token_type_ids,  #标记000111 区分 句子A和句子B
                             position_ids=position_ids, 
                             head_mask=head_mask)
 
         sentence_len = attention_mask.sum(dim=1)
         sequence_output = outputs[0]
+        # 模型最后一层的输出处的隐藏状态序列，形状为（batch_size，sequence_length，hidden_​​size）
         pooled_output = outputs[1]
-
-
-
+        # 序列的第一个标记（分类标记）的最后一层隐藏状态由线性层和Tanh激活函数进一步处理。线性从下一个句子预测（分类）中训练层权重伯特预训练期间的目标。
+        # 此输出通常 * 不是 * 一个好的摘要输入的语义内容，通常最好使用平均或合并整个输入序列的隐藏状态序列。
 
 
         # add lstm layer
@@ -1091,19 +1091,16 @@ class BertForSequenceClassification(BertPreTrainedModel):
 #         target = target.div(target_div.float().unsqueeze(-1))
 #         # target = position_att[0][:,0,:]
 #         logits = self.classifier_attention(target)
-
-
-
-# add cls
+        # add cls todo read cls/nocls
         pooled_output = self.dropout(pooled_output)
         position_att = outputs
-        target = position_att[0] * token_type_ids.float().unsqueeze(-1)
-        target = target.sum(dim=1)
-        target_div = token_type_ids.sum(dim=1)
-        target = target.div(target_div.float().unsqueeze(-1))
+        target = position_att[0] * token_type_ids.float().unsqueeze(-1)  #提取句子B（公司实体）的sequence_output
+        target = target.sum(dim=1)# sequence方向上求和,形状为（batch_size，sequenceB_length，hidden_​​size）-》（batch_size，hidden_​​size）
+        target_div = token_type_ids.sum(dim=1) # 得到句子B的长度
+        target = target.div(target_div.float().unsqueeze(-1))# 获得平均数，现状（batch_size，hidden_​​size）
         # target = position_att[0][:,0,:]
-        target_cls = torch.cat((target,pooled_output),-1)
-        logits = self.classifier_attention_cls(target_cls)
+        target_cls = torch.cat((target,pooled_output),-1)#拼接
+        logits = self.classifier_attention_cls(target_cls)# nn.Linear(768*2, self.config.num_labels)
 
 
         #original

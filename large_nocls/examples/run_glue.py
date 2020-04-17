@@ -47,7 +47,7 @@ from pytorch_transformers import (WEIGHTS_NAME, BertConfig,
 
 from pytorch_transformers import AdamW, WarmupLinearSchedule
 
-from utils_glue import (compute_metrics, convert_examples_to_features,
+from examples.utils_glue import (compute_metrics, convert_examples_to_features,
                         output_modes, processors)
 
 logger = logging.getLogger(__name__)
@@ -170,8 +170,8 @@ def train(args, train_dataset, model, tokenizer):
 
             tr_loss += loss.item()
             if (step + 1) % args.gradient_accumulation_steps == 0:
-                scheduler.step()  # Update learning rate schedule
                 optimizer.step()
+                scheduler.step()  # Update learning rate schedule
                 model.zero_grad()
                 global_step += 1
 
@@ -300,21 +300,22 @@ def evaluate(args, model, tokenizer, prefix="",test=False):
                 test_save = pd.DataFrame({'id':test_o['index'],'negative':preds})
                 test_save.to_csv(os.path.join(eval_output_dir,'result.csv'),index=False)
                 np.save(os.path.join(eval_output_dir,'test_prob.npy'),preds_prob)
-        if prefix == 'save_eval_result':
-            eval_o = pd.read_csv(os.path.join(args.data_dir,'dev.tsv'),sep='\t')
-            eval_save = pd.DataFrame({'sentence':eval_o['sentence'],'negative':preds,'0prob':preds_prob[:,0],'1prob':preds_prob[:,1]})
-            eval_save.to_csv(os.path.join(eval_output_dir,'eval_result.csv'),index=False)
+        else:
+            if prefix == 'save_eval_result':
+                eval_o = pd.read_csv(os.path.join(args.data_dir,'dev.tsv'),sep='\t')
+                eval_save = pd.DataFrame({'sentence':eval_o['sentence'],'negative':preds,'0prob':preds_prob[:,0],'1prob':preds_prob[:,1]})
+                eval_save.to_csv(os.path.join(eval_output_dir,'eval_result.csv'),index=False)
 
 
 
-        results.update(result)
+            results.update(result)
 
-        output_eval_file = os.path.join(eval_output_dir, "eval_results.txt")
-        with open(output_eval_file, "w") as writer:
-            logger.info("***** Eval results {} *****".format(prefix))
-            for key in sorted(result.keys()):
-                logger.info("  %s = %s\n", key, str(result[key]))
-                writer.write("%s = %s\n" % (key, str(result[key])))
+            output_eval_file = os.path.join(eval_output_dir, "eval_results.txt")
+            with open(output_eval_file, "w") as writer:
+                logger.info("***** Eval results {} *****".format(prefix))
+                for key in sorted(result.keys()):
+                    logger.info("  %s = %s\n", key, str(result[key]))
+                    writer.write("%s = %s\n" % (key, str(result[key])))
 
     return results
 

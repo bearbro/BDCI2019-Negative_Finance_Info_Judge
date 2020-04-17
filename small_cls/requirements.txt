@@ -12,3 +12,10 @@ regex
 sentencepiece
 # For XLM
 sacremoses
+
+
+tensorboardX
+ipdb
+
+
+pip install tqdm requests sentencepiece sacremoses tensorboardX ipdb boto3 regex

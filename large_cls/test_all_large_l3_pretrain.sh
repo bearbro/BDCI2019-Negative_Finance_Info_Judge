@@ -1,8 +1,15 @@
-model_path='/userhome/bert/lm_no_number/roberta_large'
-tokenizer_path='/userhome/bert/lm_no_number/roberta_large/vocab.txt'
-data_path='/userhome/project/data_final/test_all_sub_max512/cv_'
-output_path='./proc_data/test_all/bert_large_4v_lr3_pretrain/cv_'
-# entity_pretrain is for one step
+#model_path='/userhome/bert/lm_no_number/roberta_large'
+#tokenizer_path='/userhome/bert/lm_no_number/roberta_large/vocab.txt'
+#data_path='/userhome/project/data_final/test_all_sub_max512/cv_'
+#output_path='./proc_data/test_all/bert_large_4v_lr3_pretrain/cv_'
+## entity_pretrain is for one step
+
+
+model_path='../bert/no_numbert_pretrain/roberta_wwm_large_ext'
+tokenizer_path='../bert/no_numbert_pretrain/roberta_wwm_large_ext/vocab.txt'
+data_path='../data/preprocess/bear_cv_data_max512/cv_'
+output_path='data/6_roberta_wwm_large_ext_4v_lr3_pretrain/cv_'
+
 
 for i in {0..4}
 do

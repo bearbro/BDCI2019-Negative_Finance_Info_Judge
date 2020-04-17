@@ -1,8 +1,13 @@
 # entity_pretrain is for one_step and entity fold is for two_step_entity
-model_path='/userhome/bert/lm_no_number/no_numbert_pretrain/bert_ext'
-tokenizer_path='/userhome/bert/lm_no_number/no_numbert_pretrain/bert_ext/vocab.txt'
-data_path='/userhome/project/data_final/test_all_sub_max512/cv_'
-output_path='./proc_data/test_all_nocls/bert_ext_l2_pretrain/cv_'
+#model_path='/userhome/bert/lm_no_number/no_numbert_pretrain/bert_ext'
+#tokenizer_path='/userhome/bert/lm_no_number/no_numbert_pretrain/bert_ext/vocab.txt'
+#data_path='/userhome/project/data_final/test_all_sub_max512/cv_'
+#output_path='./proc_data/test_all_nocls/bert_ext_l2_pretrain/cv_'
+
+model_path='../bert/no_numbert_pretrain/bert_wwm_ext'
+tokenizer_path='../bert/no_numbert_pretrain/bert_wwm_ext/vocab.txt'
+data_path='../data/preprocess/bear_cv_data_max512/cv_'
+output_path='data/12_bert_wwm_ext_l2_pretrain/cv_'
 
 for i in {0..4}
 do
@@ -18,8 +23,8 @@ do
     --data_dir $data_path$i  \
     --output_dir $output_path$i   \
     --max_seq_length 512   \
-    --per_gpu_eval_batch_size=24  \
-    --per_gpu_train_batch_size=24   \
+    --per_gpu_eval_batch_size=12  \
+    --per_gpu_train_batch_size=12   \
     --max_steps=2800  \
     --learning_rate 2e-5 \
     --overwrite_output_dir   \

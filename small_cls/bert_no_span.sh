@@ -1,8 +1,14 @@
 # entity_pretrain is for one_step and entity fold is for two_step_entity
-model_path='/userhome/bert/raw/bert_base'
-tokenizer_path='/userhome/bert/raw/bert_base/vocab.txt'
-data_path='/userhome/project/data_final/train_all_sub_max512/cv_'
-output_path='./proc_data/span/bert_base_span/cv_'
+#model_path='/userhome/bert/raw/bert_base'
+#tokenizer_path='/userhome/bert/raw/bert_base/vocab.txt'
+#data_path='/userhome/project/data_final/train_all_sub_max512/cv_'
+#output_path='./proc_data/span/bert_base_span/cv_'
+
+
+model_path='../bert/bert_wwm_base'
+tokenizer_path='../bert/bert_wwm_base/vocab.txt'
+data_path='../data/preprocess/bear_cv_data_max512/cv_'
+output_path='data/bert_base_www_no_span/cv_'
 
 for i in {0..4}
 do
@@ -26,8 +32,8 @@ do
     --overwrite_cache \
     --warmup_steps=50 \
     --evaluate_during_training \
-    --logging_steps 40 \
-    --save_steps 40
+    --logging_steps 30 \
+    --save_steps 30
 done
 
 

@@ -1,8 +1,13 @@
 # entity_pretrain is for one_step and entity fold is for two_step_entity
-model_path='/userhome/bert/raw/bert_base'
-tokenizer_path='/userhome/bert/raw/bert_base/vocab.txt'
-data_path='/userhome/project/data_final/test_all_sub_max512/cv_'
-output_path='./proc_data/temp/bert_base_l2/cv_'
+#model_path='/userhome/bert/raw/bert_base'
+#tokenizer_path='/userhome/bert/raw/bert_base/vocab.txt'
+#data_path='/userhome/project/data_final/test_all_sub_max512/cv_'
+#output_path='./proc_data/temp/bert_base_l2/cv_'
+
+#model_path='../bert/bert_wwm_base'
+#tokenizer_path='../bert/bert_wwm_base/vocab.txt'
+#data_path='../data/preprocess/bear_cv_data_max512/cv_'
+#output_path='data/bert_base_wwm_l2/cv_'
 
 for i in {0..4}
 do

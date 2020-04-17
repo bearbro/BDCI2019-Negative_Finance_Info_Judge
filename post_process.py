@@ -69,11 +69,11 @@ def post_process(submit_data):
 
 
 if __name__ == '__main__':
-    train_path = os.path.join(data_path, "preprocess", "Train_Data_round2.csv")
-    test_path = os.path.join(data_path, "preprocess", "Test_Data_round2.csv")
+    train_path = os.path.join(data_path, "preprocess", "Train_Data.csv")
+    test_path = os.path.join(data_path, "preprocess", "Test_Data.csv")
     train_data = pd.read_csv(train_path)
     test_data = pd.read_csv(test_path)
-    model_predict_result = pd.read_csv(os.path.join(data_path, "submit", "fuxian_replace_post.csv"))
+    model_predict_result = pd.read_csv(os.path.join(data_path, "submit", "fuxian_replace_post.csv"))# fuxian_replace_post.csv 来自模型融合all_model_merge.py
     merge_data = test_data.merge(model_predict_result, left_on='id', right_on='id')
 
     for index, cur_row in merge_data.iterrows():
@@ -113,7 +113,9 @@ if __name__ == '__main__':
             for j, entity_inner in enumerate(entity_list):
                 if i == j:
                     continue
+                # 如果两个entity的汉字部分一样
                 if is_same_Chinese(entity_inner, entity_outter):
+                    # 如果entity_list中有其选择包含'?'的版本，替换它
                     if '?' in entity_inner and entity_outter in final_key_entity_list:
                         final_key_entity_list.remove(entity_outter)
                         final_key_entity_list.append(entity_inner)

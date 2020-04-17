@@ -5,8 +5,8 @@ from utils import concat, data_path
 import os
 
 
-train_path = os.path.join(data_path, "preprocess", "Train_Data_round2.csv")
-test_path = os.path.join(data_path, "preprocess", "Test_Data_round2.csv")
+train_path = os.path.join(data_path, "preprocess", "Train_Data.csv")
+test_path = os.path.join(data_path, "preprocess", "Test_Data.csv")
 
 
 def jaccard_similar(text1, text2):
@@ -46,7 +46,7 @@ def get_most_jaccard_similar(idx, data):
     return most_jaccard_similar, max_idx
 
 
-def get_most_similar(idx, data, vector_list):
+def get_most_similar(idx, data, vector_list): #前后30个里找最相似的
     max_cos_similar = 0
     max_idx = 0
     vector = vector_list[idx]
@@ -62,6 +62,14 @@ def get_most_similar(idx, data, vector_list):
 
 
 def get_data_cluster(train_data, test_data, submit_file, sorted_by):
+    '''
+    将train_data, test_data（如果存在submit_file则为test_data添加标签）混合并按sorted_by排序，生成Data_Cluster.csv文件
+    :param train_data:
+    :param test_data:
+    :param submit_file:
+    :param sorted_by:
+    :return:
+    '''
     train_data["text"] = train_data.apply(lambda x: concat(x["title"], x["text"]), axis=1)
     test_data["text"] = test_data.apply(lambda x: concat(x["title"], x["text"]), axis=1)
     train_data["category"] = "Train"
@@ -83,6 +91,12 @@ def get_data_cluster(train_data, test_data, submit_file, sorted_by):
 
 
 def get_train_test_cos_similar(cos_file):
+    '''
+    根据Data_Cluster.csv获取test最相似的train，注意仅在test前后30个里找最相似的train数据，这与顺序相关
+    相似的计算：cos_similar
+    :param cos_file:
+    :return:
+    '''
     data = pd.read_csv(os.path.join(data_path, "Data_Cluster.csv"), encoding='utf-8')
     data = data[["id", "text", "category", "negative", "entity", "key_entity"]]
     data["text"] = data["text"].apply(lambda x: " ".join([word for word in jieba.cut(str(x)) if x not in [" "]]))
@@ -105,7 +119,7 @@ def get_train_test_cos_similar(cos_file):
             test_max_entity.append("")
             test_max_key_entity.append("")
         else:
-            max_cos_similar, max_idx = get_most_similar(i, data, weight)
+            max_cos_similar, max_idx = get_most_similar(i, data, weight) #前后30个里找最相似的train数据，顺序相关
             test_max_cos_id.append(data.iloc[max_idx]["id"])
             test_max_cos_similar.append(max_cos_similar)
             test_max_cos_text.append(data.iloc[max_idx]["text"].replace(" ", ""))
@@ -169,9 +183,11 @@ if __name__ == "__main__":
     test_data = pd.read_csv(os.path.join(test_path), encoding='utf-8')
     get_data_cluster(train_data, test_data,
                      "fuxian_result.csv", ["entity", "text"])
-    get_train_test_cos_similar("test_cos_text_v2_fuxian.csv")
+    get_train_test_cos_similar("test_cos_text_v2_fuxian.csv")#获取test最相似的train
 
     get_data_cluster(train_data, test_data,
                      "fuxian_result.csv", ["text"])
     get_train_test_cos_similar("test_cos_text_fuxian.csv")
+    # ["id", "text", "similar_text", "cos_similar", "similar_id", "category",
+    #       "entity", "negative", "key_entity", "similar_negative", "similar_entity", "similar_key_entity"]
     # get_train_test_jaccard_similar()
